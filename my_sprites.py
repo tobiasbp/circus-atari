@@ -1,5 +1,37 @@
 import arcade
 
+class Balloon(arcade.Sprite):
+    """
+    The Balloon
+    """
+    def __init__(self,center_x,center_y,min_x=0,max_x=1024,change_x=1,size=30,color=arcade.color.PINK):
+
+        # Pass arguments to class arcade.Sprite
+        super().__init__(
+            center_x=center_x,
+            center_y=center_y,
+            scale=1,
+            texture = arcade.Texture.create_filled(
+                "foo",
+                (size,size),
+                color)
+        )
+
+        self.change_x = change_x
+        self.min_x = min_x
+        self.max_x = max_x
+
+    def update(self):
+
+        # Move the balloon
+        self.center_x += self.change_x
+
+        # Wrap around
+        if self.change_x < 0 and self.center_x < self.min_x:
+            self.center_x = self.max_x
+        elif self.change_x > 0 and self.center_x > self.max_x:
+            self.center_x = self.min_x
+
 
 class Player(arcade.Sprite):
     """

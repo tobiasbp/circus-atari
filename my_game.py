@@ -10,7 +10,7 @@ Artwork from https://kenney.nl/assets/space-shooter-redux
 import arcade
 
 # Import sprites from local file my_sprites.py
-from my_sprites import Player, PlayerShot
+from my_sprites import Player, PlayerShot, Balloon
 
 # Set the scaling of all sprites in the game
 SPRITE_SCALING = 0.5
@@ -34,6 +34,46 @@ class GameView(arcade.View):
     The view with the game itself
     """
 
+    def get_balloons(self, speed=1, rows=3,cols=10, balloon_size=30, use_spatial_hash=True):
+        """
+        Returns a list of SpriteLists with rows of Balloons.
+        """
+
+        # The max and min x position of the balloons
+        # Positions need to be off screen
+        balloon_min_x = -1 * balloon_size
+        balloon_max_x = SCREEN_WIDTH + balloon_size
+
+        # The space between ballons
+        spacing = round((SCREEN_WIDTH+2*balloon_size)/(cols))
+
+        # The list of SpriteLists to return
+        rows_of_baloons = []
+
+        for row in range(rows):
+            # Add an empty row
+            rows_of_baloons.append(
+                arcade.SpriteList(use_spatial_hash=use_spatial_hash)
+            )
+            for col in range(cols):
+                b = Balloon(
+                    center_x = col * spacing,
+                    center_y = SCREEN_HEIGHT - 1*balloon_size - row * spacing,
+                    min_x = balloon_min_x,
+                    max_x = balloon_max_x,
+                    change_x = speed
+                    )
+
+                # Flip direction every other row
+                if row % 2 == 0:
+                    b.change_x *= -1
+
+                # Add balloon to the current row
+                rows_of_baloons[-1].append(b)
+
+        return rows_of_baloons
+
+
     def on_show_view(self):
         """
         This is run once when we switch to this view
@@ -41,6 +81,8 @@ class GameView(arcade.View):
 
         # Variable that will hold a list of shots fired by the player
         self.player_shot_list = arcade.SpriteList()
+
+        self.balloon_rows = self.get_balloons()
 
         # Set up the player info
         self.player_score = 0
@@ -97,6 +139,9 @@ class GameView(arcade.View):
         # Draw the player shot
         self.player_shot_list.draw()
 
+        for row in self.balloon_rows:
+            row.draw()
+
         # Draw the player sprite
         self.player.draw()
 
@@ -131,6 +176,9 @@ class GameView(arcade.View):
 
         # Update the player shots
         self.player_shot_list.on_update(delta_time)
+
+        for row in self.balloon_rows:
+            row.update()
 
         # The game is over when the player scores a 100 points
         if self.player_score >= 100:
