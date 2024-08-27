@@ -8,6 +8,7 @@ Artwork from https://kenney.nl/assets/space-shooter-redux
 """
 
 import arcade
+import arcade.color
 
 # Import sprites from local file my_sprites.py
 from my_sprites import Player, PlayerShot, Balloon
@@ -39,6 +40,14 @@ class GameView(arcade.View):
         Returns a list of SpriteLists with rows of Balloons.
         """
 
+        # Balloon rows will alternate between these textures
+        # Note: Make sure the names are unique
+        textures = [
+            arcade.Texture.create_filled("balloon_a", (balloon_size, balloon_size), arcade.color.BABY_BLUE_EYES),
+            arcade.Texture.create_filled("balloon_b", (balloon_size, balloon_size), arcade.color.PINK),
+            arcade.Texture.create_filled("balloon_C", (balloon_size, balloon_size), arcade.color.GREEN_YELLOW),
+        ]
+
         # The max and min x position of the balloons
         # Positions need to be off screen
         balloon_min_x = -1 * balloon_size
@@ -57,11 +66,12 @@ class GameView(arcade.View):
             )
             for col in range(cols):
                 b = Balloon(
-                    size=balloon_size,
+                    #size=balloon_size,
                     center_x = col * spacing,
                     center_y = SCREEN_HEIGHT - 1*balloon_size - row * spacing,
                     min_x = balloon_min_x,
                     max_x = balloon_max_x,
+                    texture = textures[row%len(textures)]
                     )
 
                 # Add balloon to the current row
