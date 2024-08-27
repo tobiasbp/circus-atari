@@ -57,6 +57,7 @@ class GameView(arcade.View):
             )
             for col in range(cols):
                 b = Balloon(
+                    size=balloon_size,
                     center_x = col * spacing,
                     center_y = SCREEN_HEIGHT - 1*balloon_size - row * spacing,
                     min_x = balloon_min_x,
