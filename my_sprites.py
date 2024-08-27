@@ -4,7 +4,7 @@ class Balloon(arcade.Sprite):
     """
     The Balloon
     """
-    def __init__(self,center_x,center_y,min_x=0,max_x=1024,change_x=1,size=30,color=arcade.color.PINK):
+    def __init__(self,center_x,center_y,min_x=0,max_x=1024,size=30,color=arcade.color.PINK):
 
         # Pass arguments to class arcade.Sprite
         super().__init__(
@@ -17,20 +17,22 @@ class Balloon(arcade.Sprite):
                 color)
         )
 
-        self.change_x = change_x
         self.min_x = min_x
         self.max_x = max_x
 
-    def update(self):
+    def get_wrap_pos(self):
+        """
+        Return new position if Baloon is in a wrap position.
+        Otherwise, return None.
+        The physics engine will call this function to potentially move the sprite.
+        """
+        if self.center_x < self.min_x:
+            return (self.max_x, self.center_y)
+        elif self.center_x > self.max_x:
+            # self.center_x = self.min_x
+            return (self.min_x, self.center_y)
 
-        # Move the balloon
-        self.center_x += self.change_x
-
-        # Wrap around
-        if self.change_x < 0 and self.center_x < self.min_x:
-            self.center_x = self.max_x
-        elif self.change_x > 0 and self.center_x > self.max_x:
-            self.center_x = self.min_x
+        return None
 
 
 class Player(arcade.Sprite):

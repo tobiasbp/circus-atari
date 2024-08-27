@@ -34,7 +34,7 @@ class GameView(arcade.View):
     The view with the game itself
     """
 
-    def get_balloons(self, speed=1, rows=3,cols=10, balloon_size=30, use_spatial_hash=True):
+    def get_balloons(self, rows=3,cols=10, balloon_size=30, use_spatial_hash=True):
         """
         Returns a list of SpriteLists with rows of Balloons.
         """
@@ -62,12 +62,7 @@ class GameView(arcade.View):
                     center_y = SCREEN_HEIGHT - 1*balloon_size - row * spacing,
                     min_x = balloon_min_x,
                     max_x = balloon_max_x,
-                    change_x = speed
                     )
-
-                # Flip direction every other row
-                if row % 2 == 0:
-                    b.change_x *= -1
 
                 # Add balloon to the current row
                 rows_of_baloons[-1].append(b)
@@ -83,7 +78,27 @@ class GameView(arcade.View):
         # Variable that will hold a list of shots fired by the player
         self.player_shot_list = arcade.SpriteList()
 
+
+        self.physics_engine = arcade.PymunkPhysicsEngine(
+            gravity=(0,-30),
+            # damping=1.0
+        )
+
+        # A list of SpriteLists containing rows of Balloons
         self.balloon_rows = self.get_balloons()
+
+        # Add Balloons to the physics engine with no gravity
+        # Set their speeds
+        balloon_speed = -20
+        for row in self.balloon_rows:
+            for b in row:
+                self.physics_engine.add_sprite(
+                    sprite=b,
+                    gravity=(0.0, 0.0),
+                )
+                self.physics_engine.set_velocity(b, (balloon_speed,0 ))
+            # Flip direction for next row
+            balloon_speed *= -1
 
         # Set up the player info
         self.player_score = 0
@@ -178,8 +193,14 @@ class GameView(arcade.View):
         # Update the player shots
         self.player_shot_list.on_update(delta_time)
 
+
+        self.physics_engine.step()
+
+        # Wrap balloons when off screen
         for row in self.balloon_rows:
-            row.update()
+           for b in row:
+               if (new_pos := b.get_wrap_pos()) is not None:
+                   self.physics_engine.set_position(b, new_pos)
 
         # The game is over when the player scores a 100 points
         if self.player_score >= 100:
