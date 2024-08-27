@@ -40,13 +40,23 @@ class GameView(arcade.View):
         Returns a list of SpriteLists with rows of Balloons.
         """
 
-        # Balloon rows will alternate between these textures
-        # Note: Make sure the names are unique
-        textures = [
-            arcade.Texture.create_filled("balloon_a", (balloon_size, balloon_size), arcade.color.BABY_BLUE_EYES),
-            arcade.Texture.create_filled("balloon_b", (balloon_size, balloon_size), arcade.color.PINK),
-            arcade.Texture.create_filled("balloon_C", (balloon_size, balloon_size), arcade.color.GREEN_YELLOW),
+        # Balloon rows will alternate between these colors
+        colors = [
+            arcade.color.BABY_BLUE_EYES,
+            arcade.color.PINK,
+            arcade.color.GREEN_YELLOW,
         ]
+
+        # Build textures from colors
+        textures = []
+        for i, color in enumerate(colors):
+            textures.append(
+                arcade.Texture.create_filled(
+                    name=f"balloon_{i}",
+                    size=(balloon_size, balloon_size),
+                    color=color,
+                )
+            )
 
         # The max and min x position of the balloons
         # Positions need to be off screen
