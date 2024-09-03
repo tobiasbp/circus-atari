@@ -210,10 +210,7 @@ class GameView(arcade.View):
         # Update player sprite
         self.player.on_update(delta_time)
 
-        # Update the player shots
-        self.player_shot_list.on_update(delta_time)
-
-
+        # Physics engine updates sprites
         self.physics_engine.step()
 
         # Wrap balloons when off screen
@@ -223,7 +220,7 @@ class GameView(arcade.View):
                    self.physics_engine.set_position(b, new_pos)
 
         # The game is over when the player scores a 100 points
-        if self.player_score >= 100:
+        if self.player_score >= 1000:
             self.game_over()
 
     def game_over(self):
@@ -269,7 +266,10 @@ class GameView(arcade.View):
                 scale=SPRITE_SCALING,
             )
 
-            # Add the new shot to the list of shots
+            self.physics_engine.add_sprite(new_shot, mass=0.1)
+            self.physics_engine.set_velocity(new_shot, (0, 1000))
+
+            # Add the new shot to the list of shots (so we can draw the sprites)
             self.player_shot_list.append(new_shot)
 
     def on_key_release(self, key, modifiers):
