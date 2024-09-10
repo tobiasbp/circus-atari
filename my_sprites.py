@@ -37,6 +37,16 @@ class Balloon(arcade.Sprite):
 
         return None
 
+    def start_death_sequence(self):
+
+        self.alpha -= 1
+
+    def update(self):
+        if self.alpha < 255:
+            self.alpha *= 0.91
+            if self.alpha < 1:
+                self.kill()
+
 
 class Player(arcade.Sprite):
     """

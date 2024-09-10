@@ -35,6 +35,22 @@ class GameView(arcade.View):
     The view with the game itself
     """
 
+    def c_balloon_shot(self, sprite_balloon, sprite_shot, arbiter, space, _data):
+
+        if arbiter.is_first_contact:
+            # Start the Balloon death sequence
+            # It will kill() itself at the end of the sequence
+            sprite_balloon.start_death_sequence()
+
+            # Remove the balloon from the physics engine (PyMunk space) as
+            # it should no longer be tracked for collisions
+            # The sprite is still associated with the Arcade physics engine, so it is still moved.
+            # Is this a dirty hack?
+            # space.remove(arbiter.shapes[0])
+
+            # Remove the shot from everything (I think)
+            sprite_shot.kill()
+
     def get_balloons(self, rows=3,cols=10, balloon_size=30, use_spatial_hash=True):
         """
         Returns a list of SpriteLists with rows of Balloons.
@@ -89,7 +105,6 @@ class GameView(arcade.View):
 
         return rows_of_baloons
 
-
     def on_show_view(self):
         """
         This is run once when we switch to this view
@@ -115,10 +130,23 @@ class GameView(arcade.View):
                 self.physics_engine.add_sprite(
                     sprite=b,
                     gravity=(0.0, 0.0),
+                    elasticity=0.9,
+                    # friction=0.9,
+                    collision_type="balloon",
+                    # radius=30,
+                    mass=1.0,
+                    # max_vertical_velocity=1.0,
                 )
                 self.physics_engine.set_velocity(b, (balloon_speed,0 ))
             # Flip direction for next row
             balloon_speed *= -1
+
+
+        self.physics_engine.add_collision_handler(
+            first_type="balloon",
+            second_type="shot",
+            post_handler=self.c_balloon_shot
+            )
 
         # Set up the player info
         self.player_score = 0
@@ -214,9 +242,13 @@ class GameView(arcade.View):
         self.physics_engine.step()
 
         # Wrap balloons when off screen
-        for row in self.balloon_rows:
+        for i, row in enumerate(self.balloon_rows):
+            # print(f"Length of balloon row {i}:", len(row))
            for b in row:
-               if (new_pos := b.get_wrap_pos()) is not None:
+               b.update()
+               # get potential new position from balloon
+               new_pos = b.get_wrap_pos()
+               if new_pos is not None:
                    self.physics_engine.set_position(b, new_pos)
 
         # The game is over when the player scores a 100 points
@@ -266,7 +298,7 @@ class GameView(arcade.View):
                 scale=SPRITE_SCALING,
             )
 
-            self.physics_engine.add_sprite(new_shot, mass=0.1)
+            self.physics_engine.add_sprite(new_shot, mass=0.1, collision_type="shot")
             self.physics_engine.set_velocity(new_shot, (0, 1000))
 
             # Add the new shot to the list of shots (so we can draw the sprites)
