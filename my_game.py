@@ -11,7 +11,7 @@ import arcade
 import arcade.color
 
 # Import sprites from local file my_sprites.py
-from my_sprites import Player, PlayerShot, Balloon
+from my_sprites import Player, PlayerShot, Balloon, Wall
 
 # Set the scaling of all sprites in the game
 SPRITE_SCALING = 0.5
@@ -34,6 +34,22 @@ class GameView(arcade.View):
     """
     The view with the game itself
     """
+
+    def c_balloon_shot(self, sprite_balloon, sprite_shot, arbiter, space, _data):
+
+        if arbiter.is_first_contact:
+            # Start the Balloon death sequence
+            # It will kill() itself at the end of the sequence
+            sprite_balloon.start_death_sequence()
+
+            # Remove the balloon from the physics engine (PyMunk space) as
+            # it should no longer be tracked for collisions
+            # The sprite is still associated with the Arcade physics engine, so it is still moved.
+            # Is this a dirty hack?
+            # space.remove(arbiter.shapes[0])
+
+            # Remove the shot from everything (I think)
+            sprite_shot.kill()
 
     def get_balloons(self, rows=3,cols=10, balloon_size=30, use_spatial_hash=True):
         """
@@ -89,6 +105,23 @@ class GameView(arcade.View):
 
         return rows_of_baloons
 
+    def get_walls(self, level=1):
+        """
+        Add walls that physics objects will bounce off of
+        """
+        walls = arcade.SpriteList()
+        if level == 1:
+            pw = 80 # Platform width
+            ph = 30 # Platform height
+            py = 200
+            walls.append(Wall(pw/2,py,pw,ph)) # Left
+            walls.append(Wall(SCREEN_WIDTH - pw/2,py,pw,ph)) # Right
+
+        else:
+            raise Exception("Unsupported level")
+
+        return walls
+
 
     def on_show_view(self):
         """
@@ -98,11 +131,19 @@ class GameView(arcade.View):
         # Variable that will hold a list of shots fired by the player
         self.player_shot_list = arcade.SpriteList()
 
+        # Walls that objects can  bounce off off
+        self.walls = self.get_walls()
 
         self.physics_engine = arcade.PymunkPhysicsEngine(
             gravity=(0,-30),
             # damping=1.0
         )
+
+        # Add walls
+        self.physics_engine.add_sprite_list(
+            self.walls,
+            body_type=arcade.PymunkPhysicsEngine.STATIC
+            )
 
         # A list of SpriteLists containing rows of Balloons
         self.balloon_rows = self.get_balloons()
@@ -115,10 +156,23 @@ class GameView(arcade.View):
                 self.physics_engine.add_sprite(
                     sprite=b,
                     gravity=(0.0, 0.0),
+                    elasticity=0.9,
+                    # friction=0.9,
+                    collision_type="balloon",
+                    # radius=30,
+                    mass=1.0,
+                    # max_vertical_velocity=1.0,
                 )
                 self.physics_engine.set_velocity(b, (balloon_speed,0 ))
             # Flip direction for next row
             balloon_speed *= -1
+
+
+        self.physics_engine.add_collision_handler(
+            first_type="balloon",
+            second_type="shot",
+            post_handler=self.c_balloon_shot
+            )
 
         # Set up the player info
         self.player_score = 0
@@ -175,6 +229,8 @@ class GameView(arcade.View):
         # Draw the player shot
         self.player_shot_list.draw()
 
+        self.walls.draw()
+
         for row in self.balloon_rows:
             row.draw()
 
@@ -193,6 +249,20 @@ class GameView(arcade.View):
         """
         Movement and game logic
         """
+        # Shots reflect on left, right & top. Removed bottom.
+        for s in self.player_shot_list:
+            # Get the physics object for the sprite
+            so = self.physics_engine.get_physics_object(s)
+            # Get the current sprite velocity
+            sv = so.body.velocity
+            # Bounce x
+            if s.center_x > SCREEN_WIDTH or s.center_x < 0:
+                self.physics_engine.set_velocity(s, (sv[0] * -1, sv[1]))
+            # Bounce top
+            elif s.center_y > SCREEN_HEIGHT:
+                self.physics_engine.set_velocity(s, (sv[0], sv[1] * -1))
+            elif s.center_y < 0:
+                s.remove_from_sprite_lists()
 
         # Calculate player speed based on the keys pressed
         self.player.change_x = 0
@@ -214,9 +284,13 @@ class GameView(arcade.View):
         self.physics_engine.step()
 
         # Wrap balloons when off screen
-        for row in self.balloon_rows:
+        for i, row in enumerate(self.balloon_rows):
+            # print(f"Length of balloon row {i}:", len(row))
            for b in row:
-               if (new_pos := b.get_wrap_pos()) is not None:
+               b.update()
+               # get potential new position from balloon
+               new_pos = b.get_wrap_pos()
+               if new_pos is not None:
                    self.physics_engine.set_position(b, new_pos)
 
         # The game is over when the player scores a 100 points
@@ -266,8 +340,8 @@ class GameView(arcade.View):
                 scale=SPRITE_SCALING,
             )
 
-            self.physics_engine.add_sprite(new_shot, mass=0.1)
-            self.physics_engine.set_velocity(new_shot, (0, 1000))
+            self.physics_engine.add_sprite(new_shot, mass=0.1, collision_type="shot")
+            self.physics_engine.set_velocity(new_shot, (800, 1000))
 
             # Add the new shot to the list of shots (so we can draw the sprites)
             self.player_shot_list.append(new_shot)

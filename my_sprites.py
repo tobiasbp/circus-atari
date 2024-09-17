@@ -1,5 +1,46 @@
 import arcade
 
+class Acrobat(arcade.Sprite):
+    """
+    A flying acrobat
+    """
+    def __init__(self, center_x, center_y, texture=None):
+        
+        # Create a texture if none is supplied
+        if texture is None:
+            texture = arcade.Texture.create_filled(
+                "balloon_defalt",
+                (30,30),
+                arcade.color.PINK
+            )
+
+        # Pass arguments to class arcade.Sprite
+        super().__init__(
+            center_x=center_x,
+            center_y=center_y,
+            texture = texture
+        )
+
+class Wall(arcade.Sprite):        
+    """
+    A wall that objects will bounce off of
+    """
+    def __init__(self, center_x, center_y, width, height, colour=arcade.color.PERSIAN_INDIGO):
+    
+        texture = arcade.Texture.create_filled(
+            "wall",
+            (width,height),
+            colour
+        )
+
+        # Pass arguments to class arcade.Sprite
+        super().__init__(
+            center_x=center_x,
+            center_y=center_y,
+            texture = texture
+        )
+
+
 class Balloon(arcade.Sprite):
     """
     The Balloon
@@ -36,6 +77,16 @@ class Balloon(arcade.Sprite):
             return (self.min_x, self.center_y)
 
         return None
+
+    def start_death_sequence(self):
+
+        self.alpha -= 1
+
+    def update(self):
+        if self.alpha < 255:
+            self.alpha *= 0.91
+            if self.alpha < 1:
+                self.kill()
 
 
 class Player(arcade.Sprite):
