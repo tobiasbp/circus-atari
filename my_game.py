@@ -11,7 +11,7 @@ import arcade
 import arcade.color
 
 # Import sprites from local file my_sprites.py
-from my_sprites import Player, PlayerShot, Balloon, Wall
+from my_sprites import Acrobat, Player, Balloon, Wall
 
 # Set the scaling of all sprites in the game
 SPRITE_SCALING = 0.5
@@ -35,7 +35,7 @@ class GameView(arcade.View):
     The view with the game itself
     """
 
-    def c_balloon_shot(self, sprite_balloon, sprite_shot, arbiter, space, _data):
+    def c_balloon_shot(self, sprite_balloon, sprite_acrobat, arbiter, space, _data):
 
         if arbiter.is_first_contact:
             # Start the Balloon death sequence
@@ -49,7 +49,7 @@ class GameView(arcade.View):
             # space.remove(arbiter.shapes[0])
 
             # Remove the shot from everything (I think)
-            sprite_shot.kill()
+            # sprite_shot.kill()
 
     def get_balloons(self, rows=3,cols=10, balloon_size=30, use_spatial_hash=True):
         """
@@ -129,7 +129,7 @@ class GameView(arcade.View):
         """
 
         # Variable that will hold a list of shots fired by the player
-        self.player_shot_list = arcade.SpriteList()
+        self.acrobats = arcade.SpriteList()
 
         # Walls that objects can  bounce off off
         self.walls = self.get_walls()
@@ -160,7 +160,7 @@ class GameView(arcade.View):
                     # friction=0.9,
                     collision_type="balloon",
                     # radius=30,
-                    mass=1.0,
+                    mass=0.3,
                     # max_vertical_velocity=1.0,
                 )
                 self.physics_engine.set_velocity(b, (balloon_speed,0 ))
@@ -170,7 +170,7 @@ class GameView(arcade.View):
 
         self.physics_engine.add_collision_handler(
             first_type="balloon",
-            second_type="shot",
+            second_type="acrobat",
             post_handler=self.c_balloon_shot
             )
 
@@ -227,7 +227,7 @@ class GameView(arcade.View):
         self.clear()
 
         # Draw the player shot
-        self.player_shot_list.draw()
+        self.acrobats.draw()
 
         self.walls.draw()
 
@@ -250,7 +250,7 @@ class GameView(arcade.View):
         Movement and game logic
         """
         # Shots reflect on left, right & top. Removed bottom.
-        for s in self.player_shot_list:
+        for s in self.acrobats:
             # Get the physics object for the sprite
             so = self.physics_engine.get_physics_object(s)
             # Get the current sprite velocity
@@ -332,19 +332,17 @@ class GameView(arcade.View):
             self.player_score += 10
 
             # Create the new shot
-            new_shot = PlayerShot(
+            a = Acrobat(
                 center_x=self.player.center_x,
                 center_y=self.player.center_y,
-                speed=PLAYER_SHOT_SPEED,
-                max_y_pos=SCREEN_HEIGHT,
                 scale=SPRITE_SCALING,
             )
 
-            self.physics_engine.add_sprite(new_shot, mass=0.1, collision_type="shot")
-            self.physics_engine.set_velocity(new_shot, (800, 1000))
+            self.physics_engine.add_sprite(a,mass=1.0, collision_type="acrobat")
+            self.physics_engine.set_velocity(a, (0, 500))
 
             # Add the new shot to the list of shots (so we can draw the sprites)
-            self.player_shot_list.append(new_shot)
+            self.acrobats.append(a)
 
     def on_key_release(self, key, modifiers):
         """
