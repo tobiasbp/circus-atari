@@ -9,6 +9,7 @@ Artwork from https://kenney.nl/assets/space-shooter-redux
 
 import arcade
 import arcade.color
+import random
 
 # Import sprites from local file my_sprites.py
 from my_sprites import Acrobat, Player, Balloon, Wall
@@ -35,7 +36,7 @@ class GameView(arcade.View):
     The view with the game itself
     """
 
-    def c_balloon_shot(self, sprite_balloon, sprite_acrobat, arbiter, space, _data):
+    def c_balloon_acrobat(self, sprite_balloon, sprite_acrobat, arbiter, space, _data):
 
         if arbiter.is_first_contact:
             # Start the Balloon death sequence
@@ -50,6 +51,9 @@ class GameView(arcade.View):
 
             # Remove the shot from everything (I think)
             # sprite_shot.kill()
+
+    def c_acrobat_floor(self, sprite_acrobat, sprite_floor, arbiter, space, _data):
+        sprite_acrobat.kill()
 
     def get_balloons(self, rows=3,cols=10, balloon_size=30, use_spatial_hash=True):
         """
@@ -110,6 +114,7 @@ class GameView(arcade.View):
         Add walls that physics objects will bounce off of
         """
         walls = arcade.SpriteList()
+
         if level == 1:
             pw = 80 # Platform width
             ph = 30 # Platform height
@@ -139,10 +144,27 @@ class GameView(arcade.View):
             # damping=1.0
         )
 
+        # Add an invisible ceiling
+        self.physics_engine.add_sprite(
+            Wall(SCREEN_WIDTH/2, SCREEN_HEIGHT+5, SCREEN_WIDTH*2, 10),
+            body_type=arcade.PymunkPhysicsEngine.STATIC,
+            collision_type="ceiling",
+            elasticity=0.9,
+
+        )
+
+        # Add an invisible floor
+        self.physics_engine.add_sprite(
+            Wall(SCREEN_WIDTH/2, -20/2, SCREEN_WIDTH*2, 20),
+            body_type=arcade.PymunkPhysicsEngine.STATIC,
+            collision_type="floor"
+        )
+
         # Add walls
         self.physics_engine.add_sprite_list(
             self.walls,
-            body_type=arcade.PymunkPhysicsEngine.STATIC
+            body_type=arcade.PymunkPhysicsEngine.STATIC,
+            collision_type="wall"
             )
 
         # A list of SpriteLists containing rows of Balloons
@@ -160,7 +182,7 @@ class GameView(arcade.View):
                     # friction=0.9,
                     collision_type="balloon",
                     # radius=30,
-                    mass=0.3,
+                    mass=1.0,
                     # max_vertical_velocity=1.0,
                 )
                 self.physics_engine.set_velocity(b, (balloon_speed,0 ))
@@ -171,7 +193,13 @@ class GameView(arcade.View):
         self.physics_engine.add_collision_handler(
             first_type="balloon",
             second_type="acrobat",
-            post_handler=self.c_balloon_shot
+            post_handler=self.c_balloon_acrobat
+            )
+
+        self.physics_engine.add_collision_handler(
+            first_type="acrobat",
+            second_type="floor",
+            post_handler=self.c_acrobat_floor
             )
 
         # Set up the player info
@@ -258,9 +286,6 @@ class GameView(arcade.View):
             # Bounce x
             if s.center_x > SCREEN_WIDTH or s.center_x < 0:
                 self.physics_engine.set_velocity(s, (sv[0] * -1, sv[1]))
-            # Bounce top
-            elif s.center_y > SCREEN_HEIGHT:
-                self.physics_engine.set_velocity(s, (sv[0], sv[1] * -1))
             elif s.center_y < 0:
                 s.remove_from_sprite_lists()
 
@@ -339,7 +364,7 @@ class GameView(arcade.View):
             )
 
             self.physics_engine.add_sprite(a,mass=1.0, collision_type="acrobat")
-            self.physics_engine.set_velocity(a, (0, 500))
+            self.physics_engine.set_velocity(a, (random.randint(-100,100), 500))
 
             # Add the new shot to the list of shots (so we can draw the sprites)
             self.acrobats.append(a)
