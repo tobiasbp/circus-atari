@@ -30,7 +30,7 @@ class Wall(arcade.Sprite):
         texture = arcade.Texture.create_filled(
             "wall",
             (width,height),
-            arcade.color.PINK
+            colour
         )
 
         # Pass arguments to class arcade.Sprite

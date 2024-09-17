@@ -111,9 +111,11 @@ class GameView(arcade.View):
         """
         walls = arcade.SpriteList()
         if level == 1:
-            # left wall
-            walls.append(Wall(80/2,200, 80, 30))
-            walls.append(Wall(SCREEN_WIDTH + 80/2,200, 80, 30))
+            pw = 80 # Platform width
+            ph = 30 # Platform height
+            py = 200
+            walls.append(Wall(pw/2,py,pw,ph)) # Left
+            walls.append(Wall(SCREEN_WIDTH - pw/2,py,pw,ph)) # Right
 
         else:
             raise Exception("Unsupported level")
