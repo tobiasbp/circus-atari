@@ -11,7 +11,7 @@ import arcade
 import arcade.color
 
 # Import sprites from local file my_sprites.py
-from my_sprites import Player, PlayerShot, Balloon
+from my_sprites import Player, PlayerShot, Balloon, Wall
 
 # Set the scaling of all sprites in the game
 SPRITE_SCALING = 0.5
@@ -105,6 +105,22 @@ class GameView(arcade.View):
 
         return rows_of_baloons
 
+    def get_walls(self, level=1):
+        """
+        Add walls that physics objects will bounce off of
+        """
+        walls = arcade.SpriteList()
+        if level == 1:
+            # left wall
+            walls.append(Wall(80/2,200, 80, 30))
+            walls.append(Wall(SCREEN_WIDTH + 80/2,200, 80, 30))
+
+        else:
+            raise Exception("Unsupported level")
+
+        return walls
+
+
     def on_show_view(self):
         """
         This is run once when we switch to this view
@@ -113,11 +129,19 @@ class GameView(arcade.View):
         # Variable that will hold a list of shots fired by the player
         self.player_shot_list = arcade.SpriteList()
 
+        # Walls that objects can  bounce off off
+        self.walls = self.get_walls()
 
         self.physics_engine = arcade.PymunkPhysicsEngine(
             gravity=(0,-30),
             # damping=1.0
         )
+
+        # Add walls
+        self.physics_engine.add_sprite_list(
+            self.walls,
+            body_type=arcade.PymunkPhysicsEngine.STATIC
+            )
 
         # A list of SpriteLists containing rows of Balloons
         self.balloon_rows = self.get_balloons()
@@ -203,6 +227,8 @@ class GameView(arcade.View):
         # Draw the player shot
         self.player_shot_list.draw()
 
+        self.walls.draw()
+
         for row in self.balloon_rows:
             row.draw()
 
@@ -221,6 +247,20 @@ class GameView(arcade.View):
         """
         Movement and game logic
         """
+        # Shots reflect on left, right & top. Removed bottom.
+        for s in self.player_shot_list:
+            # Get the physics object for the sprite
+            so = self.physics_engine.get_physics_object(s)
+            # Get the current sprite velocity
+            sv = so.body.velocity
+            # Bounce x
+            if s.center_x > SCREEN_WIDTH or s.center_x < 0:
+                self.physics_engine.set_velocity(s, (sv[0] * -1, sv[1]))
+            # Bounce top
+            elif s.center_y > SCREEN_HEIGHT:
+                self.physics_engine.set_velocity(s, (sv[0], sv[1] * -1))
+            elif s.center_y < 0:
+                s.remove_from_sprite_lists()
 
         # Calculate player speed based on the keys pressed
         self.player.change_x = 0
@@ -299,7 +339,7 @@ class GameView(arcade.View):
             )
 
             self.physics_engine.add_sprite(new_shot, mass=0.1, collision_type="shot")
-            self.physics_engine.set_velocity(new_shot, (0, 1000))
+            self.physics_engine.set_velocity(new_shot, (800, 1000))
 
             # Add the new shot to the list of shots (so we can draw the sprites)
             self.player_shot_list.append(new_shot)
