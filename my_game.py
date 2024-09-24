@@ -278,16 +278,16 @@ class GameView(arcade.View):
         Movement and game logic
         """
         # Shots reflect on left, right & top. Removed bottom.
-        for s in self.acrobats:
+        for a in self.acrobats:
             # Get the physics object for the sprite
-            so = self.physics_engine.get_physics_object(s)
+            physics_object = self.physics_engine.get_physics_object(a)
             # Get the current sprite velocity
-            sv = so.body.velocity
+            velocity_x, velocity_y = physics_object.body.velocity
             # Bounce x
-            if s.center_x > SCREEN_WIDTH or s.center_x < 0:
-                self.physics_engine.set_velocity(s, (sv[0] * -1, sv[1]))
-            elif s.center_y < 0:
-                s.remove_from_sprite_lists()
+            if a.center_x > SCREEN_WIDTH or a.center_x < 0:
+                self.physics_engine.set_velocity(a, (velocity_x * -1, velocity_y))
+            elif a.center_y < 0:
+                a.remove_from_sprite_lists()
 
         # Calculate player speed based on the keys pressed
         self.player.change_x = 0
