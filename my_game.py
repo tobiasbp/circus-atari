@@ -363,7 +363,7 @@ class GameView(arcade.View):
                 scale=SPRITE_SCALING,
             )
 
-            self.physics_engine.add_sprite(a,mass=1.0, collision_type="acrobat")
+            self.physics_engine.add_sprite(a,mass=1.0, collision_type="acrobat",  elasticity=0.5)
             self.physics_engine.set_velocity(a, (random.randint(-100,100), 500))
 
             # Add the new shot to the list of shots (so we can draw the sprites)
