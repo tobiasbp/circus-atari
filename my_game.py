@@ -11,6 +11,8 @@ import arcade
 import arcade.color
 import random
 
+import arcade.color
+
 # Import sprites from local file my_sprites.py
 from my_sprites import Acrobat, Player, Balloon, Wall
 
@@ -39,18 +41,29 @@ class GameView(arcade.View):
     def c_balloon_acrobat(self, sprite_balloon, sprite_acrobat, arbiter, space, _data):
 
         if arbiter.is_first_contact:
-            # Start the Balloon death sequence
-            # It will kill() itself at the end of the sequence
-            sprite_balloon.start_death_sequence()
 
-            # Remove the balloon from the physics engine (PyMunk space) as
-            # it should no longer be tracked for collisions
-            # The sprite is still associated with the Arcade physics engine, so it is still moved.
-            # Is this a dirty hack?
-            # space.remove(arbiter.shapes[0])
+            # Function for creating particles with
+            # the same texture as the balloon
+            get_particle = lambda emitter: arcade.FadeParticle(
+                filename_or_texture=sprite_balloon.texture,
+                change_xy=arcade.rand_in_circle((0.0, 0.0), 3.0),
+                lifetime=random.uniform(0.5, 1.0),
+                scale=sprite_balloon.scale/2,
+                change_angle=random.randint(-10,10),
+            )
 
-            # Remove the shot from everything (I think)
-            # sprite_shot.kill()
+            # Create a burst emitter
+            e = arcade.Emitter(
+                center_xy=sprite_balloon.position,
+                emit_controller=arcade.EmitBurst(random.randint(10, 20)),
+                particle_factory=get_particle
+            )
+
+            # Add the new emitter to the game views list of emitters
+            self.burst_emitters.append(e)
+
+            # Remove the balloon
+            sprite_balloon.kill()
 
     def c_acrobat_floor(self, sprite_acrobat, sprite_floor, arbiter, space, _data):
         sprite_acrobat.kill()
@@ -101,7 +114,8 @@ class GameView(arcade.View):
                     center_y = SCREEN_HEIGHT - 1*balloon_size - row * spacing,
                     min_x = balloon_min_x,
                     max_x = balloon_max_x,
-                    texture = textures[row%len(textures)]
+                    # texture = textures[row%len(textures)]
+                    color = colors[row%len(colors)]
                     )
 
                 # Add balloon to the current row
@@ -132,6 +146,7 @@ class GameView(arcade.View):
         """
         This is run once when we switch to this view
         """
+        self.burst_emitters: list[arcade.Emitter] = []
 
         # Variable that will hold a list of shots fired by the player
         self.acrobats = arcade.SpriteList()
@@ -265,6 +280,9 @@ class GameView(arcade.View):
         # Draw the player sprite
         self.player.draw()
 
+        for e in  self.burst_emitters:
+            e.draw()
+
         # Draw players score on screen
         arcade.draw_text(
             f"SCORE: {self.player_score}",  # Text to show
@@ -277,6 +295,12 @@ class GameView(arcade.View):
         """
         Movement and game logic
         """
+        for e in self.burst_emitters:
+            e.update()
+
+            if e.can_reap():
+                self.burst_emitters.remove(e)
+
         # Shots reflect on left, right & top. Removed bottom.
         for a in self.acrobats:
             # Get the physics object for the sprite
@@ -363,7 +387,12 @@ class GameView(arcade.View):
                 scale=SPRITE_SCALING,
             )
 
-            self.physics_engine.add_sprite(a,mass=1.0, collision_type="acrobat",  elasticity=0.5)
+            self.physics_engine.add_sprite(
+                sprite=a,
+                mass=1.0,
+                collision_type="acrobat",
+                elasticity=0.5,
+            )
             self.physics_engine.set_velocity(a, (random.randint(-100,100), 500))
 
             # Add the new shot to the list of shots (so we can draw the sprites)

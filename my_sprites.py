@@ -44,14 +44,12 @@ class Balloon(arcade.Sprite):
     """
     The Balloon
     """
-    def __init__(self,center_x,center_y,min_x=0,max_x=1024,size=30,texture=None):
-
-        if texture is None:
-            texture = arcade.Texture.create_filled(
-                "balloon_defalt",
-                (30,30),
-                arcade.color.PINK
-            )
+    def __init__(self,center_x,center_y,min_x=0,max_x=1024,size=30,color=arcade.color.PINK):
+        texture = arcade.Texture.create_filled(
+            f"balloon_{color}",
+            (30,30),
+            color,
+        )
 
         # Pass arguments to class arcade.Sprite
         super().__init__(
