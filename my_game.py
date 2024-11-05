@@ -78,9 +78,9 @@ class GameView(arcade.View):
         # Acrobat hits center = 0.0, sides = 1.0
         a_speed_modifier = diff_x/(sprite_seesaw.width/2)
 
-        if a_speed_modifier < 0.2:
-            sprite_acrobat.kill()
-            return
+        #if a_speed_modifier < 0.1:
+        #    sprite_acrobat.kill()
+        #    return
 
         # Scale up speed modifier
         a_speed_modifier *= 2.0
@@ -197,15 +197,10 @@ class GameView(arcade.View):
             damping=1.0
         )
 
-        # Add the player to the physics engine
-        self.physics_engine.add_sprite(
-            self.player_sprite,
-            body_type=arcade.PymunkPhysicsEngine.DYNAMIC,
-            collision_type="seesaw",
-            gravity=(0,0),
-            elasticity=1.0,
-            mass=LARGE_MASS
-        )
+        # State of player "flip"
+        self.PLAYER_LEFT = True
+
+        self.add_player_sprite_to_engine()
 
         # Add an invisible ceiling
         self.physics_engine.add_sprite(
@@ -337,6 +332,25 @@ class GameView(arcade.View):
             arcade.color.WHITE,  # Color of text
         )
 
+    def add_player_sprite_to_engine(self):
+        """
+        Need to do this in several places,
+        so let's make a function for it.
+        """
+        if self.PLAYER_LEFT:
+            self.player_sprite.angle = -20
+        else:
+            self.player_sprite.angle = 20
+
+        self.physics_engine.add_sprite(
+            self.player_sprite,
+            body_type=arcade.PymunkPhysicsEngine.DYNAMIC,
+            collision_type="seesaw",
+            gravity=(0,0),
+            elasticity=1.0,
+            mass=LARGE_MASS
+        )
+
     def on_update(self, delta_time):
         """
         Movement and game logic
@@ -358,7 +372,6 @@ class GameView(arcade.View):
                 self.physics_engine.set_velocity(a, (velocity_x * -1, velocity_y))
             elif a.center_y < 0:
                 a.remove_from_sprite_lists()
-
 
         # Calculate player speed 
         player_speed_x = 0
@@ -423,6 +436,11 @@ class GameView(arcade.View):
             self.left_pressed = True
         elif key == arcade.key.RIGHT:
             self.right_pressed = True
+
+        if key == arcade.key.SPACE:
+            self.PLAYER_LEFT = not self.PLAYER_LEFT
+            self.physics_engine.remove_sprite(self.player_sprite)
+            self.add_player_sprite_to_engine()
 
         if key == FIRE_KEY:
             # Player gets points for firing?
