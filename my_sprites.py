@@ -95,6 +95,7 @@ class Player(arcade.Sprite):
         """
         Setup new Player object
         """
+        t = arcade.Texture.create_filled("seesaw", [400, 40], arcade.color.JAZZBERRY_JAM)
 
         # Limits on player's x position
         self.min_x_pos = min_x_pos
@@ -104,8 +105,9 @@ class Player(arcade.Sprite):
         super().__init__(
             center_x=center_x,
             center_y=center_y,
-            filename="images/playerShip1_red.png",
+            texture=t,
             scale=scale,
+            angle=0
         )
 
     def on_update(self, delta_time):

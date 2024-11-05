@@ -12,6 +12,7 @@ import arcade.color
 import random
 
 import arcade.color
+import math
 
 # Import sprites from local file my_sprites.py
 from my_sprites import Acrobat, Player, Balloon, Wall
@@ -25,13 +26,15 @@ SCREEN_HEIGHT = 600
 
 # Variables controlling the player
 PLAYER_LIVES = 3
-PLAYER_SPEED_X = 200
+PLAYER_SPEED_X = 15
 PLAYER_START_X = SCREEN_WIDTH / 2
 PLAYER_START_Y = 50
 PLAYER_SHOT_SPEED = 300
 
 FIRE_KEY = arcade.key.SPACE
 
+# Objects that are not to move, have this mass 
+LARGE_MASS = 9999999999999999999999999
 
 class GameView(arcade.View):
     """
@@ -41,10 +44,10 @@ class GameView(arcade.View):
     def c_balloon_acrobat(self, sprite_balloon, sprite_acrobat, arbiter, space, _data):
 
         if arbiter.is_first_contact:
-
+            # self.player_score += 100
             # Function for creating particles with
             # the same texture as the balloon
-            get_particle = lambda emitter: arcade.FadeParticle(
+            get_particle = lambda _: arcade.FadeParticle(
                 filename_or_texture=sprite_balloon.texture,
                 change_xy=arcade.rand_in_circle((0.0, 0.0), 3.0),
                 lifetime=random.uniform(0.5, 1.0),
@@ -64,9 +67,35 @@ class GameView(arcade.View):
 
             # Remove the balloon
             sprite_balloon.kill()
-
+                         
     def c_acrobat_floor(self, sprite_acrobat, sprite_floor, arbiter, space, _data):
         sprite_acrobat.kill()
+
+    def c_acrobat_seesaw(self, sprite_acrobat, sprite_seesaw, arbiter, space, _data):
+        # Horizontal distance between sprites
+        diff_x = abs(sprite_acrobat.center_x - sprite_seesaw.center_x)
+
+        # Acrobat hits center = 0.0, sides = 1.0
+        a_speed_modifier = diff_x/(sprite_seesaw.width/2)
+
+        if a_speed_modifier < 0.2:
+            sprite_acrobat.kill()
+            return
+
+        # Scale up speed modifier
+        a_speed_modifier *= 2.0
+
+        print(a_speed_modifier)
+
+        a_physics_object = self.physics_engine.get_physics_object(sprite_acrobat)
+        a_velocity_x, a_velocity_y = a_physics_object.body.velocity
+
+        self.physics_engine.set_velocity(
+            sprite_acrobat,
+            (a_velocity_x * a_speed_modifier, a_velocity_y * a_speed_modifier),
+        )
+        #sprite_acrobat.kill()
+        # pass
 
     def get_balloons(self, rows=3,cols=10, balloon_size=30, use_spatial_hash=True):
         """
@@ -141,22 +170,41 @@ class GameView(arcade.View):
 
         return walls
 
-
     def on_show_view(self):
         """
         This is run once when we switch to this view
         """
+        # Create a Player object
+        self.player_sprite: Player = Player(
+            center_x=PLAYER_START_X,
+            center_y=PLAYER_START_Y,
+            min_x_pos=0,
+            max_x_pos=SCREEN_WIDTH,
+            scale=SPRITE_SCALING,
+        )
+
+        # Emitters for explosion effects
         self.burst_emitters: list[arcade.Emitter] = []
 
-        # Variable that will hold a list of shots fired by the player
+        # The acrobats in the game
         self.acrobats = arcade.SpriteList()
 
         # Walls that objects can  bounce off off
         self.walls = self.get_walls()
 
         self.physics_engine = arcade.PymunkPhysicsEngine(
-            gravity=(0,-30),
-            # damping=1.0
+            gravity=(0,0),
+            damping=1.0
+        )
+
+        # Add the player to the physics engine
+        self.physics_engine.add_sprite(
+            self.player_sprite,
+            body_type=arcade.PymunkPhysicsEngine.DYNAMIC,
+            collision_type="seesaw",
+            gravity=(0,0),
+            elasticity=1.0,
+            mass=LARGE_MASS
         )
 
         # Add an invisible ceiling
@@ -164,7 +212,7 @@ class GameView(arcade.View):
             Wall(SCREEN_WIDTH/2, SCREEN_HEIGHT+5, SCREEN_WIDTH*2, 10),
             body_type=arcade.PymunkPhysicsEngine.STATIC,
             collision_type="ceiling",
-            elasticity=0.9,
+            elasticity=1.0,
 
         )
 
@@ -179,7 +227,8 @@ class GameView(arcade.View):
         self.physics_engine.add_sprite_list(
             self.walls,
             body_type=arcade.PymunkPhysicsEngine.STATIC,
-            collision_type="wall"
+            collision_type="wall",
+            elasticity=1.0,
             )
 
         # A list of SpriteLists containing rows of Balloons
@@ -193,11 +242,11 @@ class GameView(arcade.View):
                 self.physics_engine.add_sprite(
                     sprite=b,
                     gravity=(0.0, 0.0),
-                    elasticity=0.9,
+                    elasticity=1.0,
                     # friction=0.9,
                     collision_type="balloon",
                     # radius=30,
-                    mass=1.0,
+                    mass=LARGE_MASS,
                     # max_vertical_velocity=1.0,
                 )
                 self.physics_engine.set_velocity(b, (balloon_speed,0 ))
@@ -217,18 +266,15 @@ class GameView(arcade.View):
             post_handler=self.c_acrobat_floor
             )
 
+        self.physics_engine.add_collision_handler(
+            first_type="acrobat",
+            second_type="seesaw",
+            post_handler=self.c_acrobat_seesaw
+            )
+
         # Set up the player info
         self.player_score = 0
         self.player_lives = PLAYER_LIVES
-
-        # Create a Player object
-        self.player = Player(
-            center_x=PLAYER_START_X,
-            center_y=PLAYER_START_Y,
-            min_x_pos=0,
-            max_x_pos=SCREEN_WIDTH,
-            scale=SPRITE_SCALING,
-        )
 
         # Track the current state of what keys are pressed
         self.left_pressed = False
@@ -278,7 +324,7 @@ class GameView(arcade.View):
             row.draw()
 
         # Draw the player sprite
-        self.player.draw()
+        self.player_sprite.draw()
 
         for e in  self.burst_emitters:
             e.draw()
@@ -313,23 +359,25 @@ class GameView(arcade.View):
             elif a.center_y < 0:
                 a.remove_from_sprite_lists()
 
-        # Calculate player speed based on the keys pressed
-        self.player.change_x = 0
 
-        # Move player with keyboard
+        # Calculate player speed 
+        player_speed_x = 0
         if self.left_pressed and not self.right_pressed:
-            self.player.change_x = -PLAYER_SPEED_X
+            player_speed_x -= PLAYER_SPEED_X
         elif self.right_pressed and not self.left_pressed:
-            self.player.change_x = PLAYER_SPEED_X
+            player_speed_x += PLAYER_SPEED_X
+        
+        # Reposition the player sprite via the physics engine
+        self.physics_engine.set_position(
+            self.player_sprite,
+            (self.player_sprite.center_x + player_speed_x, self.player_sprite.center_y)
+        )
 
         # Move player with joystick if present
-        if self.joystick:
-            self.player.change_x = round(self.joystick.x) * PLAYER_SPEED_X
+        # if self.joystick:
+        #    self.player.change_x = round(self.joystick.x) * PLAYER_SPEED_X
 
-        # Update player sprite
-        self.player.on_update(delta_time)
-
-        # Physics engine updates sprites
+        # Update all sprites via the Physics engine
         self.physics_engine.step()
 
         # Wrap balloons when off screen
@@ -382,19 +430,23 @@ class GameView(arcade.View):
 
             # Create the new shot
             a = Acrobat(
-                center_x=self.player.center_x,
-                center_y=self.player.center_y,
+                center_x=self.player_sprite.center_x,
+                center_y=self.player_sprite.center_y + 30,
                 scale=SPRITE_SCALING,
             )
 
             self.physics_engine.add_sprite(
                 sprite=a,
-                mass=1.0,
+                mass=1,
+                gravity=(0,-300),
+                # friction=0.0,
                 collision_type="acrobat",
-                elasticity=0.5,
+                elasticity=1.0,
+                moment_of_inertia=40000.0 # math.inf, # Can not spin
             )
+            # self.physics_engine.set_velocity(a, (random.randint(-100,100), 500))
             self.physics_engine.set_velocity(a, (random.randint(-100,100), 500))
-
+            
             # Add the new shot to the list of shots (so we can draw the sprites)
             self.acrobats.append(a)
 
