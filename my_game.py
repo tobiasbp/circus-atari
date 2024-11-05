@@ -350,6 +350,37 @@ class GameView(arcade.View):
             elasticity=1.0,
             mass=LARGE_MASS
         )
+    
+    def spawn_acrobat(self):
+        
+        # Position and velocity to use when
+        # launching from platforms
+        p_x, p_y, v_x, v_y = random.choice(
+            [(50, 250, 200, 500), (SCREEN_WIDTH - 50 ,250, -200, 500)]
+        )
+        
+        # Create the new acrobat sprite
+        a = Acrobat(
+            center_x=p_x,
+            center_y=p_y,
+            scale=SPRITE_SCALING,
+        )
+
+        self.physics_engine.add_sprite(
+            sprite=a,
+            mass=1,
+            gravity=(0,-300),
+            # friction=0.0,
+            collision_type="acrobat",
+            elasticity=1.0,
+            moment_of_inertia=40000.0 # math.inf, # Can not spin
+        )
+
+        self.physics_engine.set_velocity(a, (v_x, v_y))
+        
+        # Add the new shot to the list of shots (so we can draw the sprites)
+        self.acrobats.append(a)
+
 
     def on_update(self, delta_time):
         """
@@ -443,30 +474,7 @@ class GameView(arcade.View):
             self.add_player_sprite_to_engine()
 
         if key == FIRE_KEY:
-            # Player gets points for firing?
-            self.player_score += 10
-
-            # Create the new shot
-            a = Acrobat(
-                center_x=self.player_sprite.center_x,
-                center_y=self.player_sprite.center_y + 30,
-                scale=SPRITE_SCALING,
-            )
-
-            self.physics_engine.add_sprite(
-                sprite=a,
-                mass=1,
-                gravity=(0,-300),
-                # friction=0.0,
-                collision_type="acrobat",
-                elasticity=1.0,
-                moment_of_inertia=40000.0 # math.inf, # Can not spin
-            )
-            # self.physics_engine.set_velocity(a, (random.randint(-100,100), 500))
-            self.physics_engine.set_velocity(a, (random.randint(-100,100), 500))
-            
-            # Add the new shot to the list of shots (so we can draw the sprites)
-            self.acrobats.append(a)
+            self.spawn_acrobat()
 
     def on_key_release(self, key, modifiers):
         """
