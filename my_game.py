@@ -87,15 +87,22 @@ class GameView(arcade.View):
 
         print(a_speed_modifier)
 
+        # Get current velocity of acrobat
         a_physics_object = self.physics_engine.get_physics_object(sprite_acrobat)
         a_velocity_x, a_velocity_y = a_physics_object.body.velocity
 
+        # Modify the velocity of the acrobat with the modifier calculated above.
         self.physics_engine.set_velocity(
-            sprite_acrobat,
-            (a_velocity_x * a_speed_modifier, a_velocity_y * a_speed_modifier),
+            sprite=sprite_acrobat,
+            velocity=(
+                a_velocity_x * a_speed_modifier,
+                a_velocity_y * a_speed_modifier
+            ),
         )
-        #sprite_acrobat.kill()
+        # sprite_seesaw.kill()
         # pass
+        # self.physics_engine.remove_sprite(sprite_seesaw)
+        # self.add_player_sprite_to_engine()
 
     def get_balloons(self, rows=3,cols=10, balloon_size=30, use_spatial_hash=True):
         """
@@ -264,7 +271,7 @@ class GameView(arcade.View):
         self.physics_engine.add_collision_handler(
             first_type="acrobat",
             second_type="seesaw",
-            post_handler=self.c_acrobat_seesaw
+            post_handler=self.c_acrobat_seesaw,
             )
 
         # Set up the player info
@@ -351,6 +358,12 @@ class GameView(arcade.View):
             mass=LARGE_MASS
         )
     
+    def flip_player(self):
+        self.PLAYER_LEFT = not self.PLAYER_LEFT
+        self.physics_engine.remove_sprite(self.player_sprite)
+        self.add_player_sprite_to_engine()
+
+
     def spawn_acrobat(self):
         
         # Position and velocity to use when
@@ -380,7 +393,6 @@ class GameView(arcade.View):
         
         # Add the new shot to the list of shots (so we can draw the sprites)
         self.acrobats.append(a)
-
 
     def on_update(self, delta_time):
         """
@@ -469,9 +481,7 @@ class GameView(arcade.View):
             self.right_pressed = True
 
         if key == arcade.key.SPACE:
-            self.PLAYER_LEFT = not self.PLAYER_LEFT
-            self.physics_engine.remove_sprite(self.player_sprite)
-            self.add_player_sprite_to_engine()
+            self.flip_player()
 
         if key == FIRE_KEY:
             self.spawn_acrobat()
