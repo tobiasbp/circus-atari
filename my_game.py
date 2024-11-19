@@ -204,7 +204,7 @@ class GameView(arcade.View):
             damping=1.0
         )
 
-        # State of player "flip"
+        # State of player/seesaw "flip"
         self.PLAYER_LEFT = True
 
         self.add_player_sprite_to_engine()
@@ -309,6 +309,8 @@ class GameView(arcade.View):
         # Set the background color
         arcade.set_background_color(arcade.color.AMAZON)
 
+        self.spawn_acrobat()
+
     def on_draw(self):
         """
         Render the screen.
@@ -363,15 +365,20 @@ class GameView(arcade.View):
         self.physics_engine.remove_sprite(self.player_sprite)
         self.add_player_sprite_to_engine()
 
+    def spawn_acrobat(self, position=None,velocity=None):
 
-    def spawn_acrobat(self):
-        
-        # Position and velocity to use when
-        # launching from platforms
-        p_x, p_y, v_x, v_y = random.choice(
-            [(50, 250, 200, 500), (SCREEN_WIDTH - 50 ,250, -200, 500)]
-        )
-        
+        # Spawn on platforms by default
+        if position is None and velocity is None:
+            # Position and velocity to use when
+            # launching from platforms
+            p_x, p_y, v_x, v_y = random.choice(
+                [(50, 250, 200, 500),
+                (SCREEN_WIDTH - 50 ,250, -200, 500)]
+            )
+        else:
+            p_x, p_y = position
+            v_x, v_y = velocity
+
         # Create the new acrobat sprite
         a = Acrobat(
             center_x=p_x,
@@ -480,11 +487,20 @@ class GameView(arcade.View):
         elif key == arcade.key.RIGHT:
             self.right_pressed = True
 
-        if key == arcade.key.SPACE:
+        if key == FIRE_KEY:
             self.flip_player()
 
-        if key == FIRE_KEY:
-            self.spawn_acrobat()
+            a_x_offset = self.player_sprite.width/2
+            p_x, p_y = self.player_sprite.position
+            if self.PLAYER_LEFT:
+                a_position = (p_x + a_x_offset, p_y + 50)
+            else:
+                a_position = (p_x - a_x_offset, p_y + 50)
+
+            self.spawn_acrobat(
+                position=a_position,
+                velocity=(0, 300),
+                )
 
     def on_key_release(self, key, modifiers):
         """
