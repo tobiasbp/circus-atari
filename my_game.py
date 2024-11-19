@@ -204,9 +204,6 @@ class GameView(arcade.View):
             damping=1.0
         )
 
-        # State of player/seesaw "flip"
-        self.PLAYER_LEFT = True
-
         self.add_player_sprite_to_engine()
 
         # Add an invisible ceiling
@@ -342,15 +339,6 @@ class GameView(arcade.View):
         )
 
     def add_player_sprite_to_engine(self):
-        """
-        Need to do this in several places,
-        so let's make a function for it.
-        """
-        if self.PLAYER_LEFT:
-            self.player_sprite.angle = -20
-        else:
-            self.player_sprite.angle = 20
-
         self.physics_engine.add_sprite(
             self.player_sprite,
             body_type=arcade.PymunkPhysicsEngine.DYNAMIC,
@@ -361,8 +349,8 @@ class GameView(arcade.View):
         )
     
     def flip_player(self):
-        self.PLAYER_LEFT = not self.PLAYER_LEFT
         self.physics_engine.remove_sprite(self.player_sprite)
+        self.player_sprite.flip()
         self.add_player_sprite_to_engine()
 
     def spawn_acrobat(self, position=None,velocity=None):
@@ -492,7 +480,7 @@ class GameView(arcade.View):
 
             a_x_offset = self.player_sprite.width/2
             p_x, p_y = self.player_sprite.position
-            if self.PLAYER_LEFT:
+            if self.player_sprite.left_side_down:
                 a_position = (p_x + a_x_offset, p_y + 50)
             else:
                 a_position = (p_x - a_x_offset, p_y + 50)

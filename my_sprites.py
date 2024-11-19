@@ -107,8 +107,18 @@ class Player(arcade.Sprite):
             center_y=center_y,
             texture=t,
             scale=scale,
-            angle=0
+            angle=-20
         )
+
+    @property
+    def left_side_down(self):
+        if self.angle < 0:
+            return True
+
+        return False
+
+    def flip(self):
+        self.angle *= -1
 
     def on_update(self, delta_time):
         """
