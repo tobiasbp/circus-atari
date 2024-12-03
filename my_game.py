@@ -75,6 +75,15 @@ class GameView(arcade.View):
         # Horizontal distance between sprites
         diff_x = sprite_acrobat.center_x - sprite_seesaw.center_x
 
+        # Acrobat hits side of seesaw whic is down (bad)
+        if diff_x > 0 and sprite_seesaw.left_side_down:
+            # Acrobat dies
+            sprite_acrobat.kill()
+            # Player looses a life
+            sprite_seesaw.lives -= 1
+
+            return
+
         # Acrobat hits center = 0.0, sides = 1.0
         # a_speed_modifier = abs(diff_x)/(sprite_seesaw.width/2)
         a_speed_modifier = diff_x/(sprite_seesaw.width/2)
@@ -350,14 +359,22 @@ class GameView(arcade.View):
             arcade.color.WHITE,  # Color of text
         )
 
+        # Draw players score on screen
+        arcade.draw_text(
+            f"LIVES: {self.player_sprite.lives}",  # Text to show
+            10 * 10,  # X position
+            SCREEN_HEIGHT - 20,  # Y positon
+            arcade.color.WHITE,  # Color of text
+        )
+
     def add_player_sprite_to_engine(self):
         self.physics_engine.add_sprite(
             self.player_sprite,
-            body_type=arcade.PymunkPhysicsEngine.DYNAMIC,
+            body_type=arcade.PymunkPhysicsEngine.KINEMATIC,
             collision_type="seesaw",
             gravity=(0,0),
             elasticity=1.0,
-            mass=LARGE_MASS
+            #mass=LARGE_MASS
         )
     
     def flip_player(self):
@@ -457,8 +474,8 @@ class GameView(arcade.View):
                if new_pos is not None:
                    self.physics_engine.set_position(b, new_pos)
 
-        # The game is over when the player scores a 100 points
-        if self.player_score >= 1000:
+        # Player has no lives
+        if self.player_sprite.lives <= 0:
             self.game_over()
 
     def game_over(self):

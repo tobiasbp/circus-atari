@@ -98,6 +98,7 @@ class Player(arcade.Sprite):
         # Limits on player's x position
         self.min_x_pos = min_x_pos
         self.max_x_pos = max_x_pos
+        self.lives = 3
 
         # Pass arguments to class arcade.Sprite
         super().__init__(
