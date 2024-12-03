@@ -73,9 +73,10 @@ class GameView(arcade.View):
 
     def c_acrobat_seesaw(self, sprite_acrobat, sprite_seesaw, arbiter, space, _data):
         # Horizontal distance between sprites
-        diff_x = abs(sprite_acrobat.center_x - sprite_seesaw.center_x)
+        diff_x = sprite_acrobat.center_x - sprite_seesaw.center_x
 
         # Acrobat hits center = 0.0, sides = 1.0
+        # a_speed_modifier = abs(diff_x)/(sprite_seesaw.width/2)
         a_speed_modifier = diff_x/(sprite_seesaw.width/2)
 
         #if a_speed_modifier < 0.1:
@@ -88,10 +89,11 @@ class GameView(arcade.View):
         print(a_speed_modifier)
 
         # Get current velocity of acrobat
-        a_physics_object = self.physics_engine.get_physics_object(sprite_acrobat)
-        a_velocity_x, a_velocity_y = a_physics_object.body.velocity
+        #a_physics_object = self.physics_engine.get_physics_object(sprite_acrobat)
+        #a_velocity_x, a_velocity_y = a_physics_object.body.velocity
 
         # Modify the velocity of the acrobat with the modifier calculated above.
+        """
         self.physics_engine.set_velocity(
             sprite=sprite_acrobat,
             velocity=(
@@ -99,6 +101,16 @@ class GameView(arcade.View):
                 a_velocity_y * a_speed_modifier
             ),
         )
+        """
+        sprite_acrobat.kill()
+        self.flip_player()
+        self.spawn_acrobat(
+            position=(
+                sprite_seesaw.center_x + -1 * diff_x,
+                sprite_seesaw.center_y + 60),
+            velocity=(0, abs(a_speed_modifier) * 400),
+            angular_velocity= -1 * a_speed_modifier
+            )
         # sprite_seesaw.kill()
         # pass
         # self.physics_engine.remove_sprite(sprite_seesaw)
@@ -353,7 +365,7 @@ class GameView(arcade.View):
         self.player_sprite.flip()
         self.add_player_sprite_to_engine()
 
-    def spawn_acrobat(self, position=None,velocity=None):
+    def spawn_acrobat(self, position=None,velocity=None,angular_velocity=0.0):
 
         # Spawn on platforms by default
         if position is None and velocity is None:
@@ -386,6 +398,10 @@ class GameView(arcade.View):
 
         self.physics_engine.set_velocity(a, (v_x, v_y))
         
+        if angular_velocity != 0.0:
+            po = self.physics_engine.get_physics_object(a)
+            po.body.angular_velocity = angular_velocity
+
         # Add the new shot to the list of shots (so we can draw the sprites)
         self.acrobats.append(a)
 

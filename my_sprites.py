@@ -39,7 +39,6 @@ class Wall(arcade.Sprite):
             texture = texture
         )
 
-
 class Balloon(arcade.Sprite):
     """
     The Balloon
@@ -85,7 +84,6 @@ class Balloon(arcade.Sprite):
             if self.alpha < 1:
                 self.kill()
 
-
 class Player(arcade.Sprite):
     """
     The player
@@ -112,10 +110,7 @@ class Player(arcade.Sprite):
 
     @property
     def left_side_down(self):
-        if self.angle < 0:
-            return True
-
-        return False
+        return self.angle < 0
 
     def flip(self):
         self.angle *= -1
