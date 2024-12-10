@@ -543,18 +543,6 @@ class GameView(arcade.View):
         if key == FIRE_KEY:
             self.flip_player()
 
-            a_x_offset = self.player_sprite.width/2
-            p_x, p_y = self.player_sprite.position
-            if self.player_sprite.left_side_down:
-                a_position = (p_x + a_x_offset, p_y + 50)
-            else:
-                a_position = (p_x - a_x_offset, p_y + 50)
-
-            self.spawn_acrobat(
-                position=a_position,
-                velocity=(0, 300),
-                )
-
     def on_key_release(self, key, modifiers):
         """
         Called whenever a key is released.
