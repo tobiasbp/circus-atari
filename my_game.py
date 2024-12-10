@@ -69,7 +69,14 @@ class GameView(arcade.View):
             sprite_balloon.kill()
                          
     def c_acrobat_floor(self, sprite_acrobat, sprite_floor, arbiter, space, _data):
+        self.add_emitter(
+            scale=sprite_acrobat.scale/2,
+            texture=sprite_acrobat.texture,
+            position=sprite_acrobat.position,
+        )
         sprite_acrobat.kill()
+        # Player looses a life
+        self.player_sprite.lives -= 1
 
     def c_acrobat_seesaw(self, sprite_acrobat, sprite_seesaw, arbiter, space, _data):
         # Horizontal distance between sprites
@@ -77,10 +84,16 @@ class GameView(arcade.View):
 
         # Acrobat hits side of seesaw whic is down (bad)
         if diff_x > 0 and sprite_seesaw.left_side_down:
+            # Blood effect
+            self.add_emitter(
+                scale=sprite_acrobat.scale/2,
+                texture=sprite_acrobat.texture,
+                position=sprite_acrobat.position,
+            )
             # Acrobat dies
             sprite_acrobat.kill()
             # Player looses a life
-            sprite_seesaw.lives -= 1
+            self.player_sprite.lives -= 1
 
             return
 
@@ -124,6 +137,25 @@ class GameView(arcade.View):
         # pass
         # self.physics_engine.remove_sprite(sprite_seesaw)
         # self.add_player_sprite_to_engine()
+
+    def add_emitter(self, scale, texture, position):
+
+        get_particle = lambda _: arcade.FadeParticle(
+            filename_or_texture=texture,
+            change_xy=arcade.rand_in_circle((0.0, 0.0), 3.0),
+            lifetime=random.uniform(0.5, 1.0),
+            scale=scale,
+            change_angle=random.randint(-10,10),
+        )
+
+        # Create a burst emitter
+        e = arcade.Emitter(
+            center_xy=position,
+            emit_controller=arcade.EmitBurst(random.randint(10, 20)),
+            particle_factory=get_particle
+        )
+
+        self.burst_emitters.append(e)
 
     def get_balloons(self, rows=3,cols=10, balloon_size=30, use_spatial_hash=True):
         """
