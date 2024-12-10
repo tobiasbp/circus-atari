@@ -77,6 +77,7 @@ class GameView(arcade.View):
         sprite_acrobat.kill()
         # Player looses a life
         self.player_sprite.lives -= 1
+        self.spawn_acrobat()
 
     def c_acrobat_seesaw(self, sprite_acrobat, sprite_seesaw, arbiter, space, _data):
         # Horizontal distance between sprites
@@ -94,6 +95,7 @@ class GameView(arcade.View):
             sprite_acrobat.kill()
             # Player looses a life
             self.player_sprite.lives -= 1
+            self.spawn_acrobat()
 
             return
 
