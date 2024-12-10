@@ -83,7 +83,7 @@ class GameView(arcade.View):
         # Horizontal distance between sprites
         diff_x = sprite_acrobat.center_x - sprite_seesaw.center_x
 
-        # Acrobat hits side of seesaw whic is down (bad)
+        # Acrobat hits side of seesaw which is down (bad)
         if diff_x > 0 and sprite_seesaw.left_side_down:
             # Blood effect
             self.add_emitter(
@@ -128,11 +128,17 @@ class GameView(arcade.View):
         """
         sprite_acrobat.kill()
         self.flip_player()
+        # Calculate new acrobat's speeds
+        a_x_speed = abs(a_speed_modifier) * 50
+        if diff_x < 0:
+            a_x_speed *= -1
+        a_y_speed = abs(a_speed_modifier) * 400
+
         self.spawn_acrobat(
             position=(
                 sprite_seesaw.center_x + -1 * diff_x,
                 sprite_seesaw.center_y + 60),
-            velocity=(0, abs(a_speed_modifier) * 400),
+            velocity=(a_x_speed, a_y_speed),
             angular_velocity= -1 * a_speed_modifier
             )
         # sprite_seesaw.kill()
