@@ -36,6 +36,8 @@ FIRE_KEY = arcade.key.SPACE
 # Objects that are not to move, have this mass 
 LARGE_MASS = 9999999999999999999999999
 
+DEBUG_ENABLED = True
+
 class GameView(arcade.View):
     """
     The view with the game itself
@@ -68,7 +70,16 @@ class GameView(arcade.View):
             # Remove the balloon
             sprite_balloon.kill()
 
+            # update no of balloons in game
+            nb = 0
+            for row in self.balloon_rows:
+                nb += len(row)
+            self.no_of_ballons = nb
+
             self.player_score += 10
+
+            if DEBUG_ENABLED:
+                print("No of Balloons in game:", self.no_of_ballons)
                          
     def c_acrobat_floor(self, sprite_acrobat, sprite_floor, arbiter, space, _data):
         self.add_emitter(
@@ -298,6 +309,7 @@ class GameView(arcade.View):
 
         # Add Balloons to the physics engine with no gravity
         # Set their speeds
+        self.no_of_ballons = 0
         balloon_speed = -20
         for row in self.balloon_rows:
             for b in row:
@@ -312,9 +324,9 @@ class GameView(arcade.View):
                     # max_vertical_velocity=1.0,
                 )
                 self.physics_engine.set_velocity(b, (balloon_speed,0 ))
+                self.no_of_ballons += 1
             # Flip direction for next row
             balloon_speed *= -1
-
 
         self.physics_engine.add_collision_handler(
             first_type="balloon",
@@ -517,6 +529,11 @@ class GameView(arcade.View):
                new_pos = b.get_wrap_pos()
                if new_pos is not None:
                    self.physics_engine.set_position(b, new_pos)
+
+        # End game if no balloons are left
+        if self.no_of_ballons <= 0:
+            # FIXME: A next level should be loaded here
+            self.game_over()
 
         # Player has no lives
         if self.player_sprite.lives <= 0:
