@@ -109,6 +109,9 @@ class Player(arcade.Sprite):
             angle=-20
         )
 
+        # The (Fake) Acrobat waiting to be launched
+        self.passanger = Acrobat(center_x, center_y, scale = 0.5)
+
     @property
     def left_side_down(self):
         return self.angle < 0
@@ -116,16 +119,12 @@ class Player(arcade.Sprite):
     def flip(self):
         self.angle *= -1
 
-    def on_update(self, delta_time):
+    def update(self):
         """
         Move the sprite
         """
 
-        # Update player's x position based on current speed in x dimension
-        self.center_x += delta_time * self.change_x
-
-        # Enforce limits on player's x position
-        if self.left < self.min_x_pos:
-            self.left = self.min_x_pos
-        elif self.right > self.max_x_pos:
-            self.right = self.max_x_pos
+        if self.left_side_down:
+            self.passanger.center_x = self.center_x + self.width/2
+        else:
+            self.passanger.center_x = self.center_x - self.width/2

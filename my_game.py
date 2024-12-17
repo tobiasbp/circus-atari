@@ -67,6 +67,8 @@ class GameView(arcade.View):
 
             # Remove the balloon
             sprite_balloon.kill()
+
+            self.player_score += 10
                          
     def c_acrobat_floor(self, sprite_acrobat, sprite_floor, arbiter, space, _data):
         self.add_emitter(
@@ -387,6 +389,7 @@ class GameView(arcade.View):
 
         # Draw the player sprite
         self.player_sprite.draw()
+        self.player_sprite.passanger.draw()
 
         for e in  self.burst_emitters:
             e.draw()
@@ -481,8 +484,6 @@ class GameView(arcade.View):
             # Bounce x
             if a.center_x > SCREEN_WIDTH or a.center_x < 0:
                 self.physics_engine.set_velocity(a, (velocity_x * -1, velocity_y))
-            elif a.center_y < 0:
-                a.remove_from_sprite_lists()
 
         # Calculate player speed 
         player_speed_x = 0
@@ -496,6 +497,9 @@ class GameView(arcade.View):
             self.player_sprite,
             (self.player_sprite.center_x + player_speed_x, self.player_sprite.center_y)
         )
+
+        # Passanger follows sprite
+        self.player_sprite.update()
 
         # Move player with joystick if present
         # if self.joystick:
